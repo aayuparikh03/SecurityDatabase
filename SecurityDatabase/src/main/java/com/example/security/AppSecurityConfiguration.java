@@ -3,7 +3,7 @@ package com.example.security;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.provisioning.UserDetailsManager;
@@ -12,6 +12,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import javax.sql.DataSource;
 
 @Configuration
+@EnableMethodSecurity
 public class AppSecurityConfiguration {
 
     @Bean
@@ -29,17 +30,9 @@ public class AppSecurityConfiguration {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(configurer ->
-                configurer
-                        .requestMatchers(HttpMethod.GET, "/api/students/**")
-                        .hasAnyRole("STUDENT", "TEACHER", "ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/students")
-                        .hasRole("TEACHER")
-                        .requestMatchers(HttpMethod.PATCH, "/api/students/**")
-                        .hasRole("TEACHER")
-                        .requestMatchers(HttpMethod.DELETE, "/api/students/**")
-                        .hasRole("ADMIN")
+                configurer.anyRequest().authenticated()
         );
-        http.httpBasic(Customizer.withDefaults());
+        http.httpBasic();
         http.csrf(csrf -> csrf.disable());
         return http.build();
     }
