@@ -5,9 +5,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
@@ -19,23 +16,28 @@ public class AppSecurityConfiguration {
 
     @Bean
     public UserDetailsManager userDetailsManager(DataSource dataSource) {
-       return new JdbcUserDetailsManager(dataSource);
+        JdbcUserDetailsManager userDetailsManager = new JdbcUserDetailsManager(dataSource);
+        userDetailsManager.setUsersByUsernameQuery(
+                "select membername, password, active from members where membername=?"
+        );
+        userDetailsManager.setAuthoritiesByUsernameQuery(
+                "select membername, role from roles where membername=?"
+        );
+        return userDetailsManager;
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(configurer ->
                 configurer
-                        .requestMatchers(HttpMethod.GET, "/api/students")
-                        .hasAnyRole("STUDENT", "TEACHER", "ADMIN") // Matches "ROLE_STUDENT", etc.
                         .requestMatchers(HttpMethod.GET, "/api/students/**")
-                        .hasAnyRole("STUDENT", "TEACHER", "ADMIN") // Matches "ROLE_STUDENT", etc.
+                        .hasAnyRole("STUDENT", "TEACHER", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/students")
-                        .hasRole("TEACHER") // Matches "ROLE_TEACHER"
+                        .hasRole("TEACHER")
                         .requestMatchers(HttpMethod.PATCH, "/api/students/**")
-                        .hasRole("TEACHER") // Matches "ROLE_TEACHER"
+                        .hasRole("TEACHER")
                         .requestMatchers(HttpMethod.DELETE, "/api/students/**")
-                        .hasRole("ADMIN") // Matches "ROLE_ADMIN"
+                        .hasRole("ADMIN")
         );
         http.httpBasic(Customizer.withDefaults());
         http.csrf(csrf -> csrf.disable());
